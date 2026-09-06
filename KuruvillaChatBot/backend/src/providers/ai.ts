@@ -91,6 +91,18 @@ export class MockAIProvider implements AIProvider {
       return pickRandom(greetings);
     }
 
+    // EDUCATION - Check before the generic background/experience branch.
+    if (
+      userContent.includes('education') ||
+      userContent.includes('educational') ||
+      userContent.includes('degree') ||
+      userContent.includes('school') ||
+      userContent.includes('university') ||
+      userContent.includes('college')
+    ) {
+      return "My educational background includes a Bachelor of Technology in Computer Science and Engineering from the University of Kerala, along with technical certifications in AI, machine learning, and full-stack development. I also believe in continuous learning through practical projects and experimentation.";
+    }
+
     // PROJECTS - Multiple variations
     if (userContent.includes('project') || userContent.includes('built') || userContent.includes('created') || userContent.includes('build') || userContent.includes('repo') || userContent.includes('repository')) {
       const projects = [
