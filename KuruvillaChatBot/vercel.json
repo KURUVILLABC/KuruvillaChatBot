@@ -1,5 +1,5 @@
 {
   "buildCommand": "npm run build:chat-website",
   "outputDirectory": "chat-website/dist",
-  "installCommand": "npm install"
+  "installCommand": "npm install && npm install --prefix chat-website"
 }
