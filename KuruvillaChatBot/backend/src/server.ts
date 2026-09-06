@@ -53,6 +53,7 @@ async function startServer(): Promise<void> {
     await app.register(rateLimit, {
       max: 100,
       timeWindow: '15 minutes',
+      allowList: ['/api/health'],
     });
 
     // Initialize providers

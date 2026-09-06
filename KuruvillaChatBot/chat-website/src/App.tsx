@@ -39,7 +39,11 @@ export default function App() {
         const response = await fetch(`${BACKEND_URL}/api/health`, {
           method: 'GET',
         });
-        setIsConnected(response.ok);
+        if (response.ok) {
+          setIsConnected(true);
+        } else if (response.status !== 429) {
+          setIsConnected(false);
+        }
       } catch {
         setIsConnected(false);
       }
