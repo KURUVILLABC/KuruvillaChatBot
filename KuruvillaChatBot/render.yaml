@@ -2,8 +2,9 @@ services:
   - type: web
     name: kuruvilla-chat-backend
     runtime: node
-    buildCommand: npm run build:render
-    startCommand: npm run start:render
+    rootDir: KuruvillaChatBot
+    buildCommand: npm --prefix backend install --include=dev --no-audit --no-fund && npm --prefix backend run build
+    startCommand: npm --prefix backend start
     envVars:
       - key: NODE_ENV
         value: production
