@@ -1,0 +1,65 @@
+.status-section {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-item:last-of-type {
+  border-bottom: none;
+  margin-bottom: 12px;
+}
+
+.status-item label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.status-value {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.status-value.connected {
+  color: #059669;
+}
+
+.status-value.disconnected {
+  color: #dc2626;
+}
+
+.status-value.mock {
+  color: #f59e0b;
+  background-color: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sync-button {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sync-button:hover {
+  background-color: #1d4ed8;
+}
+
+.sync-button:active {
+  opacity: 0.9;
+}
