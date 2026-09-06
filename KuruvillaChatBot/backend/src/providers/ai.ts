@@ -71,7 +71,11 @@ export class MockAIProvider implements AIProvider {
 
   private generateDigitalTwinResponse(userContent: string, systemPrompt: string): string {
     // Helper: randomly select from array
-    const pickRandom = (arr: string[]): string => arr[Math.floor(Math.random() * arr.length)];
+    const pickRandom = (arr: string[]): string => {
+      if (arr.length === 0) return '';
+      const selected = arr[Math.floor(Math.random() * arr.length)];
+      return selected || arr[0] || '';
+    };
 
     // Keyword-based response generation - CHECK SPECIFIC PATTERNS FIRST!
     // Order matters: check specific topics before generic patterns

@@ -40,7 +40,12 @@ async function startServer(): Promise<void> {
 
     // Register CORS
     await app.register(cors, {
-      origin: [config.frontendUrl, 'http://localhost:3000', 'http://localhost:5173'],
+      origin: [
+        config.frontendUrl,
+        'https://kuruvilla-chat.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173',
+      ],
       credentials: true,
     });
 

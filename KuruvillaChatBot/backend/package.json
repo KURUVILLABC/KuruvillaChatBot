@@ -22,7 +22,6 @@
     "fastify": "^4.25.2",
     "groq-sdk": "^1.6.0",
     "openai": "^7.10.0",
-    "profile-ai-knowledge-system": "file:..",
     "zod": "^3.22.4"
   },
   "devDependencies": {
