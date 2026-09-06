@@ -92,7 +92,7 @@ export default function App() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || 'Sorry, I could not generate a response.',
+        content: data.answer || data.response || 'Sorry, I could not generate a response.',
         timestamp: new Date(),
       };
 
