@@ -36,10 +36,10 @@ export default function App() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/knowledge`, {
+        const response = await fetch(`${BACKEND_URL}/api/health`, {
           method: 'GET',
         });
-        setIsConnected(response.ok || response.status === 404);
+        setIsConnected(response.ok);
       } catch {
         setIsConnected(false);
       }
