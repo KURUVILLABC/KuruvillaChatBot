@@ -6,7 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AIProvider } from '../providers/ai.js';
 import { MockAIProvider } from '../providers/ai.js';
-import type { KnowledgeBase } from '../schemas/knowledge.js';
+import { createDefaultKnowledgeBase, type KnowledgeBase } from '../schemas/knowledge.js';
 
 // Request schema
 const ChatRequestSchema = z.object({
@@ -34,7 +34,7 @@ const ChatResponseSchema = z.object({
 type ChatResponse = z.infer<typeof ChatResponseSchema>;
 
 // Knowledge base reference (set by sync route)
-let currentKnowledgeBase: KnowledgeBase | null = null;
+let currentKnowledgeBase: KnowledgeBase = createDefaultKnowledgeBase();
 
 export function setChatKnowledgeBase(kb: KnowledgeBase): void {
   currentKnowledgeBase = kb;

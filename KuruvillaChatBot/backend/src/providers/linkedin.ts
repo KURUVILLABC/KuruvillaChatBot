@@ -142,10 +142,10 @@ export class MockLinkedInProvider implements LinkedInProvider {
     return {
       id: 'kuruvilla-biju-cheruvallil',
       name: 'Kuruvilla Biju Cheruvallil',
-      title: 'Software Engineer & AI Systems Architect',
-      headline: 'Passionate about building AI systems, knowledge bases, and conversational interfaces | Full Stack Developer',
-      summary: 'Experienced software engineer with passion for AI systems and web technologies. Specializing in full-stack development, AI integration, and knowledge base systems. Strong track record of building scalable applications and innovative solutions.',
-      profile_url: 'https://linkedin.com/in/kuruvilla-biju-cheruvallil',
+      title: 'Full Stack Developer',
+      headline: 'Passionate Software Engineer and Full Stack Developer',
+      summary: 'Passionate Software Engineer and Full Stack Developer with experience delivering end-to-end solutions across diverse projects. Focused on creating initiatives, tackling complex challenges, and building innovative digital experiences.',
+      profile_url: 'https://www.linkedin.com/in/kuruvilla-biju-cheruvallil-b28475206/',
       picture_url: null,
     };
   }
@@ -157,27 +157,59 @@ export class MockLinkedInProvider implements LinkedInProvider {
     return [
       {
         id: 'exp-1',
-        title: 'Senior Software Engineer / Full Stack Developer',
-        company: 'Various Tech Companies',
-        startDate: '2020-01',
+        title: 'Software Engineer',
+        company: 'Redblack Software',
+        startDate: '2025-08',
         endDate: null,
-        description: 'Building scalable applications, AI systems, and knowledge base platforms. Expertise in TypeScript, React, Node.js, and AI integration. Led development of conversational AI systems and full-stack applications.',
+        description: 'Full-stack development focused mainly on frontend work, DOM manipulation script development, Epic ownership, customer-centric development, UI design and development, REST APIs, OpenAPI, and feature development.',
       },
       {
         id: 'exp-2',
-        title: 'Full Stack Developer',
-        company: 'Tech Startups',
-        startDate: '2018-06',
-        endDate: '2019-12',
-        description: 'Developed web applications using modern frameworks. Worked on both frontend and backend systems. Implemented REST APIs, database optimization, and frontend components using React.',
+        title: 'Software Engineer',
+        company: 'intelliflo',
+        startDate: '2025-01',
+        endDate: '2025-08',
+        description: 'Full-stack and desktop development, multiple feature deliveries, major merge request reviews, DOM manipulation, QA support, performance testing, batch scripts, and REST APIs.',
       },
       {
         id: 'exp-3',
-        title: 'Junior Developer / Intern',
-        company: 'Various Companies',
-        startDate: '2015-06',
-        endDate: '2018-05',
-        description: 'Started career learning web development, software engineering best practices, and cloud technologies. Worked with HTML, CSS, JavaScript, and backend technologies.',
+        title: 'Associate Software Engineer',
+        company: 'intelliflo',
+        startDate: '2023-07',
+        endDate: '2025-01',
+        description: 'Full-stack development with Aurelia, HTML, CSS, JavaScript, C#, and SQL. Reviewed merge requests, fixed bugs, developed features, created scripts, and built applications to make work easier.',
+      },
+      {
+        id: 'exp-4',
+        title: 'Software Development Intern',
+        company: 'Global Development Community Program (GDCP)',
+        startDate: '2023-03',
+        endDate: null,
+        description: 'Training in Julia, data science, web development, ethical hacking, and social engineering.',
+      },
+      {
+        id: 'exp-5',
+        title: 'Data Engineer Intern',
+        company: 'Skypoint Cloud',
+        startDate: '2022-10',
+        endDate: '2022-11',
+        description: 'Training in Azure Data Factory, Azure Cosmos DB, Microsoft Azure, Azure Data Lake, and Azure Databricks.',
+      },
+      {
+        id: 'exp-6',
+        title: 'Django Developer Intern',
+        company: 'Kites Softwares Pvt. Ltd.',
+        startDate: '2022-05',
+        endDate: '2022-07',
+        description: 'Worked with Python, Django, web development, and frontend development, and developed six projects.',
+      },
+      {
+        id: 'exp-7',
+        title: 'Student Trainee',
+        company: 'Camino Infotech Pvt. Ltd.',
+        startDate: '2022-01',
+        endDate: '2022-02',
+        description: 'Training in Python, Django, web development, and backend development.',
       },
     ];
   }
@@ -187,17 +219,15 @@ export class MockLinkedInProvider implements LinkedInProvider {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     return [
-      { id: 'skill-1', name: 'TypeScript', endorsements: 45 },
-      { id: 'skill-2', name: 'JavaScript', endorsements: 52 },
-      { id: 'skill-3', name: 'React', endorsements: 38 },
-      { id: 'skill-4', name: 'Node.js', endorsements: 35 },
-      { id: 'skill-5', name: 'Full Stack Development', endorsements: 42 },
-      { id: 'skill-6', name: 'AI Systems', endorsements: 28 },
-      { id: 'skill-7', name: 'API Design', endorsements: 32 },
-      { id: 'skill-8', name: 'Database Design', endorsements: 25 },
-      { id: 'skill-9', name: 'Web Development', endorsements: 40 },
-      { id: 'skill-10', name: 'Problem Solving', endorsements: 35 },
-    ];
+      'C#', 'Python', 'Julia', 'C++', 'C', 'Java',
+      'HTML', 'CSS', 'JavaScript', 'Aurelia', 'Django', 'React',
+      'AWS', 'Azure', 'GCD', 'SQL', 'Cosmos DB', 'Data Lake',
+      'Hadoop', 'PySpark', 'Excel', 'R', 'Power BI', 'Photoshop',
+      'Illustrator', 'Premiere Pro',
+    ].map((name, index) => ({
+      id: `skill-${index + 1}`,
+      name,
+    }));
   }
 
   async getEducation(): Promise<LinkedInEducation[]> {

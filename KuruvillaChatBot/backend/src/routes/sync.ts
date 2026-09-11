@@ -6,7 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import type { GitHubProvider } from '../providers/github.js';
 import type { LinkedInProvider } from '../providers/linkedin.js';
 import type { AIProvider } from '../providers/ai.js';
-import { createKnowledgeBase, validateKnowledgeBase, type KnowledgeBase } from '../schemas/knowledge.js';
+import { createDefaultKnowledgeBase, createKnowledgeBase, validateKnowledgeBase, type KnowledgeBase } from '../schemas/knowledge.js';
 import { setChatKnowledgeBase } from './chat.js';
 import { config } from '../config.js';
 
@@ -23,7 +23,7 @@ let syncStatus: SyncStatus = {
   message: 'Ready to synchronize',
 };
 
-let currentKnowledgeBase: KnowledgeBase | null = null;
+let currentKnowledgeBase: KnowledgeBase = createDefaultKnowledgeBase();
 
 export async function createSyncRoutes(
   app: FastifyInstance,
@@ -208,7 +208,7 @@ export async function createSyncRoutes(
         };
         return reply.status(500).send({
           status: 'error',
-          knowledgeVersion: currentKnowledgeBase?.version || 'none',
+          knowledgeVersion: currentKnowledgeBase.version,
         });
       }
     }
@@ -221,12 +221,6 @@ export async function createSyncRoutes(
 
   // Get current knowledge base
   app.get<{ Reply: any }>('/api/knowledge', async (_request, reply) => {
-    if (!currentKnowledgeBase) {
-      return reply.status(404).send({
-        error: 'Knowledge base not yet generated. Please run sync first.',
-      });
-    }
-
     const { experience, education, skills, projects, profile } = currentKnowledgeBase;
     return reply.send({
       profile,
