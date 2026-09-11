@@ -44,6 +44,7 @@ export class MockAIProvider implements AIProvider {
       .pop(); // Get LAST user message, not first!
     const systemPrompt = systemMessage?.content ?? '';
     const userContent = userMessage?.content.toLowerCase() ?? '';
+    const userMessageCount = request.messages.filter((message) => message.role === 'user').length;
 
     // Detect if this is a digital twin persona prompt
     const isDigitalTwin = systemPrompt.includes('YOU ARE THAT PERSON') || 
@@ -53,7 +54,7 @@ export class MockAIProvider implements AIProvider {
 
     if (isDigitalTwin) {
       // Digital twin responses - speak as Kuruvilla
-      response = this.generateDigitalTwinResponse(userContent, systemPrompt);
+      response = this.generateDigitalTwinResponse(userContent, systemPrompt, userMessageCount);
     } else {
       // Fallback to assistant mode if not digital twin
       response = this.generateAssistantResponse(userContent, systemPrompt);
@@ -69,7 +70,11 @@ export class MockAIProvider implements AIProvider {
     };
   }
 
-  private generateDigitalTwinResponse(userContent: string, systemPrompt: string): string {
+  private generateDigitalTwinResponse(
+    userContent: string,
+    systemPrompt: string,
+    userMessageCount: number,
+  ): string {
     // Helper: randomly select from array
     const pickRandom = (arr: string[]): string => {
       if (arr.length === 0) return '';
@@ -81,7 +86,7 @@ export class MockAIProvider implements AIProvider {
     // Order matters: check specific topics before generic patterns
     
     // Greetings (highest priority, most specific)
-    if (userContent.includes('hello') || userContent.includes('hi') || userContent.includes('hey')) {
+    if (/\b(hello|hi|hey)\b/.test(userContent)) {
       const greetings = [
         "Hey! Thanks for stopping by. I'm Kuruvilla, a Software Engineer and AI Systems Architect. I'm passionate about building intelligent systems, knowledge bases, and exploring what's possible with AI. What would you like to know about me?",
         "Hi there! 👋 I'm Kuruvilla. Great to meet you! I work on AI systems and full-stack development. Feel free to ask me anything about my work, projects, or tech interests.",
@@ -91,6 +96,58 @@ export class MockAIProvider implements AIProvider {
       return pickRandom(greetings);
     }
 
+    // Specific profile questions must be handled before broad topic branches.
+    if (
+      userContent.includes('currently work') ||
+      userContent.includes('where do you work') ||
+      userContent.includes('current company') ||
+      userContent.includes('current role') ||
+      userContent.includes('current work') ||
+      userContent.includes('currently employed')
+    ) {
+      return "I currently work as a Software Engineer at Redblack Software. My work is focused mainly on frontend development, DOM manipulation scripts, UI design, REST APIs, OpenAPI, feature development, and contributing to the Copilot development environment with custom agents, skills, and prompts.";
+    }
+
+    if (
+      userContent.includes('non internship') ||
+      userContent.includes('non-internship') ||
+      userContent.includes('without internship') ||
+      userContent.includes('excluding internship') ||
+      userContent.includes('outside internship') ||
+      userContent.includes('outside internships')
+    ) {
+      return "I have about three years of non-internship professional experience. That includes my Software Engineer roles at intelliflo from July 2023 to August 2025 and my current Software Engineer role at Redblack Software since August 2025.";
+    }
+
+    if (
+      userContent.includes('contribution') ||
+      userContent.includes('contributed') ||
+      userContent.includes('previous company') ||
+      userContent.includes('previous role')
+    ) {
+      return "At my previous company, intelliflo, I delivered full-stack web and desktop features, reviewed major merge requests, fixed bugs, supported QA and performance testing, developed batch scripts and REST APIs, and created small internal applications that made everyday work easier. I also worked with Aurelia, HTML, CSS, JavaScript, C#, and SQL.";
+    }
+
+    if (
+      (userContent.includes('list') || userContent.includes('what')) &&
+      (userContent.includes('project') || userContent.includes('github') || userContent.includes('repository')) &&
+      (userContent.includes('github') || userContent.includes('repository'))
+    ) {
+      return "My public GitHub projects include KuruvillaChatBot, Omnisearch, MRTracker, GitLabMRMate, Firepoker-app-Cheat, RGBOO, MergeWithGratitude, GlowingCSSButtosSocialMedia, Thanal-House_Rental_Platform, Pianissist-AI, Reminder-Clock, kuruvillabc.github.io, CSS-3D-RotatingCube-For-Contact-Section, and Bank-Management-System. You can browse them at https://github.com/KURUVILLABC.";
+    }
+
+    if (
+      (userContent.includes('explain') || userContent.includes('describe') || userContent.includes('tell me about') || userContent.includes('give me')) &&
+      (userContent.includes('random project') || userContent.includes('one project') || userContent.includes('github project') || userContent.includes('random github'))
+    ) {
+      const projectDescriptions = [
+        "One project is Pianissist-AI, a browser-based piano that responds to mouse, keyboard, and microphone voice input. It explores interactive audio in the browser with JavaScript and the Web Audio API.",
+        "One project is Omnisearch, a keyboard-first tool for navigating links and old bookmarks. It is designed to make finding frequently used web resources faster through a focused browser UI.",
+        "One project is MRTracker, a developer tool for managing and optimizing GitLab merge requests. It uses JavaScript and the GitLab REST API to make merge-request workflows easier to follow.",
+      ];
+      return pickRandom(projectDescriptions);
+    }
+
     // EDUCATION - Check before the generic background/experience branch.
     if (
       userContent.includes('education') ||
@@ -98,9 +155,24 @@ export class MockAIProvider implements AIProvider {
       userContent.includes('degree') ||
       userContent.includes('school') ||
       userContent.includes('university') ||
-      userContent.includes('college')
+      userContent.includes('college') ||
+      userContent.includes('graduat') ||
+      userContent.includes('institution')
     ) {
-      return "My educational background includes a Bachelor of Technology in Computer Science and Engineering from the University of Kerala, along with technical certifications in AI, machine learning, and full-stack development. I also believe in continuous learning through practical projects and experimentation.";
+      return "I graduated with a Bachelor of Technology in Information Technology from Kerala Technical University. My studies covered computer science fundamentals, data structures, algorithms, and software engineering.";
+    }
+
+    if (
+      userContent.includes('course') ||
+      userContent.includes('certification') ||
+      userContent.includes('certifications')
+    ) {
+      return "I have pursued technical courses and certifications in AI, machine learning, full-stack development, React, Node.js, and cloud technologies. My profile records these as ongoing technical learning through online courses and practical projects rather than as one single named course.";
+    }
+
+    // GITHUB - Handle GitHub-specific questions before general projects.
+    if (userContent.includes('github')) {
+      return "My GitHub profile is https://github.com/KURUVILLABC. It contains public projects across full-stack development, AI experimentation, browser tools, developer productivity, and UI work. Ask me to list the repositories or explain one of them for more detail.";
     }
 
     // PROJECTS - Multiple variations
@@ -147,18 +219,17 @@ export class MockAIProvider implements AIProvider {
       return pickRandom(aiPassion);
     }
 
-    // GITHUB - Separate from projects
-    if (userContent.includes('github')) {
-      return "You can find my projects on GitHub. I keep my work public because I believe in open source and sharing knowledge. My repositories include various full-stack projects, AI systems, and tools I've built. Feel free to check them out - I'm always working on something interesting!";
-    }
-
     // GENERAL ABOUT YOURSELF - Check after specific topics (lower priority, more generic)
     if (userContent.includes('yourself') || userContent.includes('about you') || (userContent.includes('tell me') && !userContent.includes('about'))) {
       return "I'm Kuruvilla, a full-stack developer and AI systems architect with a passion for building scalable, intelligent solutions. I specialize in creating knowledge systems, AI integration, and working across the entire tech stack from backend services to interactive frontends. I'm really excited about the potential of AI to transform how we work and create solutions.";
     }
 
     // Default digital twin response for unknown topics
-    return "That's an interesting question! I'd be happy to tell you more. What specifically would you like to know - about my experience, the technologies I work with, projects I've built, or my thoughts on certain topics?";
+    if (userMessageCount >= 2) {
+      return "My knowledge base is focused on my professional profile. I was created to answer questions about my professional career, including my work experience, skills, education, contributions, and projects.";
+    }
+
+    return "My knowledge base is focused on my professional profile. I can answer questions about my work experience, skills, education, contributions, and projects.";
   }
 
   private generateAssistantResponse(userContent: string, systemPrompt: string): string {
