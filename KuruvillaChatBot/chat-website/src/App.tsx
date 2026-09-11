@@ -85,7 +85,10 @@ export default function App() {
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({
+          message: text,
+          conversation: messages.map(({ role, content }) => ({ role, content })),
+        }),
       });
 
       if (!response.ok) {
