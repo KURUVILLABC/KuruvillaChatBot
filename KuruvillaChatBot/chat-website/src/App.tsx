@@ -153,7 +153,7 @@ export default function App() {
         <div className="messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message message-${msg.role}`}>
-              <div className="message-avatar">{msg.role === 'assistant' ? '🤖' : '👤'}</div>
+              <div className="message-avatar">{msg.role === 'assistant' ? '' : ''}</div>
               <div className="message-content">
                 <div className="message-text">{msg.content}</div>
                 <div className="message-time">
