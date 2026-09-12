@@ -21,7 +21,7 @@ body {
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #088290f5 0%, #39a1d4b5 100%);
+  background: linear-gradient(135deg, #086590f5, #397fd4b5);
   color: white;
   padding: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -379,7 +379,7 @@ body {
   }
 
   .app {
-    background: linear-gradient(195deg, #90dfe7cc, #b6f2fdd9);
+    background: linear-gradient(195deg, #90c4e7cc, #b6ddfdd9)
   }
 
   .message-text {
@@ -412,7 +412,7 @@ body {
   }
 
   .input-area {
-    background: linear-gradient(188deg, #8cbcc4e0 0%, #bfd0dbcc 100%);
+    background: linear-gradient(339deg, #b5ecfbe0 0%, #c0e2f9d9 100%);
     border-top-color: #374151;
   }
 
