@@ -21,9 +21,9 @@ body {
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #088290f5 0%, #39a1d4b5 100%);
   color: white;
-  padding: 20px;
+  padding: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -34,7 +34,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 5px;
 }
 
 .header h1 {
@@ -214,7 +214,7 @@ body {
 
 /* Suggestions */
 .suggestions {
-  padding: 20px;
+  padding: 10px;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
 }
@@ -236,12 +236,12 @@ body {
 
 .suggestion-btn {
   text-align: left;
-  padding: 12px 16px;
+  padding: 6px 6px;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
-  color: #2563eb;
+  color: #08bad6;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -296,14 +296,15 @@ body {
 }
 
 .input-field:disabled {
-  background: #f3f4f6;
-  cursor: not-allowed;
-  opacity: 0.6;
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+    overflow: hidden;
 }
 
 .send-btn {
   padding: 10px 16px;
-  background: #2563eb;
+  background: linear-gradient(4deg, #3bb8c0, #0fb5b9);
   color: white;
   border: none;
   border-radius: 8px;
@@ -329,9 +330,10 @@ body {
 }
 
 .send-btn:disabled {
-  background: #d1d5db;
+  background: #305b6278;
   cursor: not-allowed;
   opacity: 0.6;
+  color: #242121;
 }
 
 .input-hint {
@@ -377,7 +379,7 @@ body {
   }
 
   .app {
-    background: #1f2937;
+    background: linear-gradient(195deg, #90dfe7cc, #b6f2fdd9);
   }
 
   .message-text {
@@ -391,30 +393,33 @@ body {
   }
 
   .suggestions {
-    background: #111827;
-    border-top-color: #374151;
+    background: linear-gradient(181deg, rgb(11 60 69 / 28%), rgb(17 66 80 / 68%));
+    border-top: 1px solid rgba(165, 243, 252, 0.3);
+    box-shadow: 0 -8px 32px rgba(6, 152, 178, 0.18);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
   }
 
   .suggestion-btn {
-    background: #374151;
+    background: linear-gradient(179deg, #f3f3f3b5, #ffffff78);
     border-color: #4b5563;
-    color: #60a5fa;
+    color: #004855;
   }
 
   .suggestion-btn:hover:not(:disabled) {
-    background: #4b5563;
-    border-color: #60a5fa;
+    background: linear-gradient(180deg, #ffffff, #efdede9e);;
+    border-color: #d4e4f7;
   }
 
   .input-area {
-    background: #1f2937;
+    background: linear-gradient(188deg, #8cbcc4e0 0%, #bfd0dbcc 100%);
     border-top-color: #374151;
   }
 
   .input-field {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f3f4f6;
+    background: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .input-field:focus {
@@ -427,7 +432,7 @@ body {
   }
 
   .suggestions-label {
-    color: #9ca3af;
+    color: #fdfdfd;
   }
 
   .message-time {

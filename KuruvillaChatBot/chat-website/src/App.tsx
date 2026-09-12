@@ -131,7 +131,6 @@ export default function App() {
       <header className="header">
         <div className="header-content">
           <h1>💬 Chat with Kuruvilla</h1>
-          <p>AI Professional Knowledge System</p>
           <div className={`status ${isConnected ? 'connected' : 'disconnected'}`}>
             {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
           </div>
@@ -205,7 +204,9 @@ export default function App() {
               ➤
             </button>
           </div>
-          <p className="input-hint">Press Enter to send, Shift+Enter for new line</p>
+          <p className="input-hint">This chatbot is experimental and under active development.
+            Please expect occasional issues or inaccuracies.
+          </p>
         </div>
       </main>
     </div>
