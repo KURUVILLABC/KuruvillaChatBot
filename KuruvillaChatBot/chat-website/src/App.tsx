@@ -29,6 +29,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -41,8 +42,7 @@ export default function App() {
         });
         if (response.ok) {
           setIsConnected(true);
-        } else if (response.status !== 429) {
-          setIsConnected(false);
+          setIsCheckingConnection(false);
         }
       } catch {
         setIsConnected(false);
@@ -66,6 +66,18 @@ export default function App() {
       textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
   }, [input]);
+
+  if (isCheckingConnection || !isConnected) {
+    return (
+      <div className="connection-loading" role="status" aria-live="polite">
+        <div className="connection-loading-card">
+          <div className="connection-spinner" aria-hidden="true"></div>
+          <h1>Connecting to Kuruvilla</h1>
+          <p>Waiting for the backend to become available...</p>
+        </div>
+      </div>
+    );
+  }
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
