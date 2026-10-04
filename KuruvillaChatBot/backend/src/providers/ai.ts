@@ -68,7 +68,8 @@ export class MockAIProvider implements AIProvider {
   ): string {
     const normalizedQuestion = question.toLowerCase();
     const normalizedContext = priorContext.toLowerCase();
-    const searchText = `${normalizedQuestion} ${normalizedContext}`;
+    const hasContextReference = /\b(it|that|there|those|them|they|its|their)\b/.test(normalizedQuestion);
+    const searchText = hasContextReference ? `${normalizedQuestion} ${normalizedContext}` : normalizedQuestion;
     const words = this.getSearchWords(searchText);
     const mentionsProject = knowledgeBase.projects.some((project) =>
       normalizedQuestion.includes(project.name.toLowerCase()),
@@ -110,15 +111,18 @@ export class MockAIProvider implements AIProvider {
       const explicitlyNamedProjects = knowledgeBase.projects.filter((project) =>
         normalizedQuestion.includes(project.name.toLowerCase()),
       );
+      const wantsAll = /\b(all|every|list)\b/.test(normalizedQuestion) ||
+        /\b(which|what)\s+(public\s+)?(repositories|repos)\b/.test(normalizedQuestion);
       const matches = explicitlyNamedProjects.length > 0
         ? explicitlyNamedProjects
         : this.rankItems(knowledgeBase.projects, words, (project) =>
           `${project.name} ${project.description ?? ''} ${project.technologies.join(' ')}`,
         );
-      const wantsAll = /\b(all|every|list)\b/.test(normalizedQuestion);
       const wantsSingleProject = /\b(one|a project|an example|any project)\b/.test(normalizedQuestion) ||
         (mentionsProject && !/\b(projects|repositories|compare|both|all|list)\b/.test(normalizedQuestion));
-      const selected = matches.length > 0
+      const selected = wantsAll && explicitlyNamedProjects.length === 0
+        ? knowledgeBase.projects
+        : matches.length > 0
         ? matches.slice(0, wantsAll ? matches.length : wantsSingleProject ? 1 : 5)
         : knowledgeBase.projects.slice(0, wantsAll ? knowledgeBase.projects.length : 5);
       if (selected.length === 0) return "I don't have project details in the profile yet.";
@@ -250,6 +254,14 @@ export class MockAIProvider implements AIProvider {
   }
 
   private getSearchWords(text: string): Set<string> {
+    const stopWords = new Set([
+      'a', 'about', 'am', 'an', 'and', 'are', 'as', 'at', 'be', 'been', 'but', 'can',
+      'could', 'did', 'do', 'does', 'for', 'from', 'give', 'have', 'he', 'her', 'here',
+      'him', 'his', 'how', 'i', 'in', 'is', 'it', 'its', 'me', 'my', 'of', 'on', 'or',
+      'please', 'she', 'some', 'someone', 'tell', 'that', 'the', 'their', 'them', 'there',
+      'they', 'this', 'to', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'who',
+      'why', 'will', 'with', 'would', 'you', 'your',
+    ]);
     const aliases: Record<string, string[]> = {
       workplace: ['current', 'work', 'experience'],
       employer: ['company', 'experience'],
@@ -270,6 +282,7 @@ export class MockAIProvider implements AIProvider {
       university: ['education'],
     };
     const words = new Set(text.toLowerCase().match(/[a-z0-9+#.]+/g) ?? []);
+    for (const word of stopWords) words.delete(word);
     for (const word of [...words]) {
       for (const alias of aliases[word] ?? []) words.add(alias);
     }

@@ -120,6 +120,27 @@ describe('POST /api/chat with the default AI provider', () => {
     expect(body.answer).not.toContain('Omnisearch');
   });
 
+  it('lists all repositories when asked, regardless of unrelated earlier turns', async () => {
+    const knowledgeBase = createDefaultKnowledgeBase();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/chat',
+      payload: {
+        message: 'Which repositories do I have?',
+        conversation: [
+          { role: 'user', content: 'What does Pianissist-AI do?' },
+          { role: 'assistant', content: 'Pianissist-AI is a browser piano. https://github.com/KURUVILLABC/Pianissist-AI' },
+        ],
+      },
+    });
+    const body = response.json<{ answer: string }>();
+
+    for (const project of knowledgeBase.projects) {
+      expect(body.answer).toContain(project.name);
+      expect(body.answer).toContain(project.url);
+    }
+  });
+
   it('does not present an older undated internship as current employment', async () => {
     const response = await app.inject({
       method: 'POST',
@@ -142,6 +163,17 @@ describe('POST /api/chat with the default AI provider', () => {
 
     expect(body.answer).toContain("I don't have that detail in my profile");
     expect(body.answer).not.toContain(defaultAnswer);
+  });
+
+  it('does not treat conversational filler as evidence for an unsupported personal fact', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/chat',
+      payload: { message: 'Do you have a favorite movie?', conversation: [] },
+    });
+    const body = response.json<{ answer: string }>();
+
+    expect(body.answer).toContain("I don't have that detail in my profile");
   });
 
   it('uses the currently installed knowledge base when it changes', async () => {
