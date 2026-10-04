@@ -3,6 +3,8 @@
  * Different implementations can be used based on configuration
  */
 
+import { KnowledgeBaseSchema, type KnowledgeBase } from '../schemas/knowledge.js';
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -34,31 +36,20 @@ export interface AIProvider {
  */
 export class MockAIProvider implements AIProvider {
   async chat(request: ChatRequest): Promise<ChatResponse> {
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Extract system prompt and LAST user message (not first!)
     const systemMessage = request.messages.find((m) => m.role === 'system');
-    const userMessage = request.messages
-      .filter((m) => m.role === 'user')
-      .pop(); // Get LAST user message, not first!
+    const userMessages = request.messages.filter((message) => message.role === 'user');
+    const userContent = userMessages.at(-1)?.content ?? '';
     const systemPrompt = systemMessage?.content ?? '';
-    const userContent = userMessage?.content.toLowerCase() ?? '';
-    const userMessageCount = request.messages.filter((message) => message.role === 'user').length;
-
-    // Detect if this is a digital twin persona prompt
-    const isDigitalTwin = systemPrompt.includes('YOU ARE THAT PERSON') || 
-                          systemPrompt.includes('Kuruvilla Biju Cheruvallil - a real person');
-
-    let response: string;
-
-    if (isDigitalTwin) {
-      // Digital twin responses - speak as Kuruvilla
-      response = this.generateDigitalTwinResponse(userContent, systemPrompt, userMessageCount);
-    } else {
-      // Fallback to assistant mode if not digital twin
-      response = this.generateAssistantResponse(userContent, systemPrompt);
-    }
+    const priorContext = request.messages
+      .filter((message) => message.role !== 'system')
+      .slice(0, -1)
+      .slice(-4)
+      .map((message) => message.content)
+      .join(' ');
+    const knowledgeBase = this.extractKnowledgeBase(systemPrompt);
+    const response = knowledgeBase
+      ? this.generateDigitalTwinResponse(userContent, priorContext, knowledgeBase)
+      : this.generateAssistantResponse(userContent.toLowerCase());
 
     return {
       content: response,
@@ -71,209 +62,244 @@ export class MockAIProvider implements AIProvider {
   }
 
   private generateDigitalTwinResponse(
-    userContent: string,
-    systemPrompt: string,
-    userMessageCount: number,
+    question: string,
+    priorContext: string,
+    knowledgeBase: KnowledgeBase,
   ): string {
-    // Helper: randomly select from array
-    const pickRandom = (arr: string[]): string => {
-      if (arr.length === 0) return '';
-      const selected = arr[Math.floor(Math.random() * arr.length)];
-      return selected || arr[0] || '';
-    };
+    const normalizedQuestion = question.toLowerCase();
+    const normalizedContext = priorContext.toLowerCase();
+    const searchText = `${normalizedQuestion} ${normalizedContext}`;
+    const words = this.getSearchWords(searchText);
+    const mentionsProject = knowledgeBase.projects.some((project) =>
+      normalizedQuestion.includes(project.name.toLowerCase()),
+    );
+    const mentionsEmployer = knowledgeBase.experience.some((experience) =>
+      normalizedQuestion.includes(experience.company.toLowerCase()),
+    );
+    const wantsProjects = mentionsProject || /\b(project|projects|repository|repositories|repo|built|created|portfolio)\b/.test(normalizedQuestion);
+    const wantsExperience = mentionsEmployer || /\b(experience|career|employment|employer|work|job|role|company|companies|workplace|current|previous|contribution|contributions|internship|internships)\b/.test(normalizedQuestion);
+    const wantsEducation = /\b(education|degree|school|university|college|study|studied|graduat|certification|course)\w*\b/.test(normalizedQuestion);
+    const wantsSkills = /\b(skill|skills|technology|technologies|language|languages|expertise|stack|framework|tool)\w*\b/.test(normalizedQuestion);
 
-    // Keyword-based response generation - CHECK SPECIFIC PATTERNS FIRST!
-    // Order matters: check specific topics before generic patterns
-    
-    // Greetings (highest priority, most specific)
-    if (/\b(hello|hi|hey)\b/.test(userContent)) {
-      const greetings = [
-        "Hey! Thanks for stopping by. I'm Kuruvilla, a Software Engineer and AI Systems Architect. I'm passionate about building intelligent systems, knowledge bases, and exploring what's possible with AI. What would you like to know about me?",
-        "Hi there! 👋 I'm Kuruvilla. Great to meet you! I work on AI systems and full-stack development. Feel free to ask me anything about my work, projects, or tech interests.",
-        "Hello! Welcome! I'm a software engineer focused on AI and knowledge systems. I'd love to tell you more about what I do. What brings you here?",
-        "Hey! Happy to chat. I'm Kuruvilla, and I love building things with AI and modern web technologies. What would you like to know?"
-      ];
-      return pickRandom(greetings);
+    if (/\b(hello|hi|hey|good morning|good afternoon|good evening)\b/.test(normalizedQuestion)) {
+      return `Hi, I'm ${knowledgeBase.profile.name}. What would you like to know about my work or projects?`;
+    }
+    if (/\b(thanks|thank you)\b/.test(normalizedQuestion)) {
+      return "You're welcome. Glad I could help.";
+    }
+    if (/\b(how are you|how's it going)\b/.test(normalizedQuestion)) {
+      return "I'm here and ready to help. What would you like to know about my professional profile?";
     }
 
-    // Specific profile questions must be handled before broad topic branches.
-    if (
-      userContent.includes('currently work') ||
-      userContent.includes('where do you work') ||
-      userContent.includes('current company') ||
-      userContent.includes('current role') ||
-      userContent.includes('current work') ||
-      userContent.includes('currently employed')
-    ) {
-      return "I currently work as a Software Engineer at Redblack Software. My work is focused mainly on frontend development, DOM manipulation scripts, UI design, REST APIs, OpenAPI, feature development, and contributing to the Copilot development environment with custom agents, skills, and prompts.";
+    if (/\b(portfolio|website|email|contact|linkedin)\b/.test(normalizedQuestion)) {
+      const links = [
+        /\b(portfolio|website)\b/.test(normalizedQuestion) && knowledgeBase.profile.portfolioUrl
+          ? `Portfolio: ${knowledgeBase.profile.portfolioUrl}`
+          : '',
+        /\b(email|contact)\b/.test(normalizedQuestion) && knowledgeBase.profile.email
+          ? `Email: ${knowledgeBase.profile.email}`
+          : '',
+        /\blinkedin\b/.test(normalizedQuestion) && knowledgeBase.profile.linkedinUrl
+          ? `LinkedIn: ${knowledgeBase.profile.linkedinUrl}`
+          : '',
+      ].filter(Boolean);
+      if (links.length > 0) return links.join('\n');
     }
 
-    if (
-      userContent.includes('non internship') ||
-      userContent.includes('non-internship') ||
-      userContent.includes('without internship') ||
-      userContent.includes('excluding internship') ||
-      userContent.includes('outside internship') ||
-      userContent.includes('outside internships')
-    ) {
-      return "I have about three years of non-internship professional experience. That includes my Software Engineer roles at intelliflo from July 2023 to August 2025 and my current Software Engineer role at Redblack Software since August 2025.";
+    if (wantsProjects) {
+      const explicitlyNamedProjects = knowledgeBase.projects.filter((project) =>
+        normalizedQuestion.includes(project.name.toLowerCase()),
+      );
+      const matches = explicitlyNamedProjects.length > 0
+        ? explicitlyNamedProjects
+        : this.rankItems(knowledgeBase.projects, words, (project) =>
+          `${project.name} ${project.description ?? ''} ${project.technologies.join(' ')}`,
+        );
+      const wantsAll = /\b(all|every|list)\b/.test(normalizedQuestion);
+      const wantsSingleProject = /\b(one|a project|an example|any project)\b/.test(normalizedQuestion) ||
+        (mentionsProject && !/\b(projects|repositories|compare|both|all|list)\b/.test(normalizedQuestion));
+      const selected = matches.length > 0
+        ? matches.slice(0, wantsAll ? matches.length : wantsSingleProject ? 1 : 5)
+        : knowledgeBase.projects.slice(0, wantsAll ? knowledgeBase.projects.length : 5);
+      if (selected.length === 0) return "I don't have project details in the profile yet.";
+      return selected.map((project) => {
+        const description = project.description ? ` ${project.description}` : '';
+        const technologies = project.technologies.length > 0
+          ? ` It uses ${project.technologies.join(', ')}.`
+          : '';
+        const link = project.url ? ` ${project.url}` : '';
+        return `${project.name}:${description}${technologies}${link}`;
+      }).join('\n\n');
     }
 
-    if (
-      userContent.includes('contribution') ||
-      userContent.includes('contributed') ||
-      userContent.includes('previous company') ||
-      userContent.includes('previous role')
-    ) {
-      return "At my previous company, intelliflo, I delivered full-stack web and desktop features, reviewed major merge requests, fixed bugs, supported QA and performance testing, developed batch scripts and REST APIs, and created small internal applications that made everyday work easier. I also worked with Aurelia, HTML, CSS, JavaScript, C#, and SQL.";
+    if (wantsExperience) {
+      const currentOnly = /\b(current|currently|present|now|latest)\b/.test(normalizedQuestion);
+      const wantsAll = /\b(all|every|list)\b/.test(normalizedQuestion);
+      const openRoles = knowledgeBase.experience.filter((experience) => !experience.endDate);
+      const latestOpenStart = Math.max(...openRoles.map((experience) => experience.startDate.getTime()));
+      const matches = currentOnly
+        ? openRoles.filter((experience) => experience.startDate.getTime() === latestOpenStart)
+        : this.rankItems(knowledgeBase.experience, words, (experience) =>
+          `${experience.title} ${experience.company} ${experience.description ?? ''}`,
+        );
+      const selected = matches.length > 0
+        ? matches.slice(0, wantsAll || currentOnly ? matches.length : 4)
+        : knowledgeBase.experience.slice(0, wantsAll ? knowledgeBase.experience.length : 4);
+      if (selected.length === 0) return "I don't have work experience details in the profile yet.";
+      return selected.map((experience) => {
+        const startDate = experience.startDate.toLocaleDateString('en', { month: 'long', year: 'numeric' });
+        const endDate = experience.endDate?.toLocaleDateString('en', { month: 'long', year: 'numeric' });
+        const isLatestOpenRole = !experience.endDate && experience.startDate.getTime() === latestOpenStart;
+        const dateRange = endDate
+          ? `${startDate} to ${endDate}`
+          : isLatestOpenRole
+            ? `${startDate} to present`
+            : `starting ${startDate}`;
+        const description = experience.description ? ` ${experience.description}` : '';
+        return `${experience.title} at ${experience.company} (${dateRange}).${description}`;
+      }).join('\n\n');
     }
 
-    if (
-      (userContent.includes('list') || userContent.includes('what')) &&
-      (userContent.includes('project') || userContent.includes('github') || userContent.includes('repository')) &&
-      (userContent.includes('github') || userContent.includes('repository'))
-    ) {
-      return "My public GitHub projects include KuruvillaChatBot, Omnisearch, MRTracker, GitLabMRMate, Firepoker-app-Cheat, RGBOO, MergeWithGratitude, GlowingCSSButtosSocialMedia, Thanal-House_Rental_Platform, Pianissist-AI, Reminder-Clock, kuruvillabc.github.io, CSS-3D-RotatingCube-For-Contact-Section, and Bank-Management-System. You can browse them at https://github.com/KURUVILLABC.";
+    if (wantsEducation) {
+      const matches = this.rankItems(knowledgeBase.education, words, (education) =>
+        `${education.school} ${education.degree} ${education.field} ${education.description ?? ''}`,
+      );
+      const selected = matches.length > 0 ? matches.slice(0, 3) : knowledgeBase.education;
+      if (selected.length === 0) return "I don't have education details in the profile yet.";
+      return selected.map((education) => {
+        const dates = education.startDate && education.endDate
+          ? ` (${education.startDate.getFullYear()}-${education.endDate.getFullYear()})`
+          : '';
+        const description = education.description ? ` ${education.description}` : '';
+        return `${education.degree} in ${education.field} from ${education.school}${dates}.${description}`;
+      }).join('\n\n');
     }
 
-    if (
-      (userContent.includes('explain') || userContent.includes('describe') || userContent.includes('tell me about') || userContent.includes('give me')) &&
-      (userContent.includes('random project') || userContent.includes('one project') || userContent.includes('github project') || userContent.includes('random github'))
-    ) {
-      const projectDescriptions = [
-        "One project is Pianissist-AI, a browser-based piano that responds to mouse, keyboard, and microphone voice input. It explores interactive audio in the browser with JavaScript and the Web Audio API.",
-        "One project is Omnisearch, a keyboard-first tool for navigating links and old bookmarks. It is designed to make finding frequently used web resources faster through a focused browser UI.",
-        "One project is MRTracker, a developer tool for managing and optimizing GitLab merge requests. It uses JavaScript and the GitLab REST API to make merge-request workflows easier to follow.",
-      ];
-      return pickRandom(projectDescriptions);
+    if (wantsSkills) {
+      const previousProject = this.rankItems(
+        knowledgeBase.projects,
+        this.getSearchWords(searchText),
+        (project) => `${project.name} ${project.description ?? ''}`,
+      )[0];
+      if (previousProject && /\b(stack|technology|technologies|framework|tool|used)\b/.test(normalizedQuestion)) {
+        return `${previousProject.name} uses ${previousProject.technologies.join(', ')}.`;
+      }
+      const category = knowledgeBase.skills.find((skill) =>
+        skill.category && normalizedQuestion.includes(skill.category.toLowerCase()),
+      )?.category;
+      const selected = category
+        ? knowledgeBase.skills.filter((skill) => skill.category === category)
+        : this.rankItems(knowledgeBase.skills, words, (skill) => `${skill.name} ${skill.category ?? ''}`);
+      const additionalLanguageSkills = category === 'Programming Languages' && /\blanguages?\b/.test(normalizedQuestion)
+        ? knowledgeBase.skills.filter((skill) => skill.name.toLowerCase() === 'javascript')
+        : [];
+      const skills = selected.length > 0
+        ? [...selected, ...additionalLanguageSkills]
+        : knowledgeBase.skills;
+      if (skills.length === 0) return "I don't have skills listed in the profile yet.";
+      const grouped = new Map<string, string[]>();
+      for (const skill of skills) {
+        const group = skill.category ?? 'Other';
+        grouped.set(group, [...(grouped.get(group) ?? []), skill.name]);
+      }
+      return [...grouped.entries()].map(([group, names]) => `${group}: ${names.join(', ')}`).join('\n');
     }
 
-    // EDUCATION - Check before the generic background/experience branch.
-    if (
-      userContent.includes('education') ||
-      userContent.includes('educational') ||
-      userContent.includes('degree') ||
-      userContent.includes('school') ||
-      userContent.includes('university') ||
-      userContent.includes('college') ||
-      userContent.includes('graduat') ||
-      userContent.includes('institution')
-    ) {
-      return "I graduated with a Bachelor of Technology in Information Technology from Kerala Technical University. My studies covered computer science fundamentals, data structures, algorithms, and software engineering.";
+    if (/\b(github|repositories|followers|following|organization|organizations)\b/.test(normalizedQuestion)) {
+      const github = knowledgeBase.githubProfile;
+      if (!github) return `My GitHub profile is ${knowledgeBase.profile.githubUrl ?? 'not listed in the profile'}.`;
+      const profileUrl = typeof github.profileUrl === 'string' ? github.profileUrl : knowledgeBase.profile.githubUrl;
+      const repositoryCount = typeof github.publicRepositories === 'number'
+        ? ` It lists ${github.publicRepositories} public repositories.`
+        : '';
+      return `My GitHub profile is ${profileUrl ?? 'not listed in the profile'}.${repositoryCount}`;
     }
 
-    if (
-      userContent.includes('course') ||
-      userContent.includes('certification') ||
-      userContent.includes('certifications')
-    ) {
-      return "I have pursued technical courses and certifications in AI, machine learning, full-stack development, React, Node.js, and cloud technologies. My profile records these as ongoing technical learning through online courses and practical projects rather than as one single named course.";
+    if (/\b(who are you|about yourself|tell me about yourself|your name|name|title|bio)\b/.test(normalizedQuestion)) {
+      const { name, title, bio } = knowledgeBase.profile;
+      if (/\bbio\b/.test(normalizedQuestion) && bio) return bio;
+      if (/\btitle\b/.test(normalizedQuestion)) return `My profile lists my title as ${title}.`;
+      return `${name} here. I'm a ${title}.${bio ? ` ${bio}` : ''}`;
     }
 
-    // GITHUB - Handle GitHub-specific questions before general projects.
-    if (userContent.includes('github')) {
-      return "My GitHub profile is https://github.com/KURUVILLABC. It contains public projects across full-stack development, AI experimentation, browser tools, developer productivity, and UI work. Ask me to list the repositories or explain one of them for more detail.";
+    const profileFacts = [
+      `${knowledgeBase.profile.name} ${knowledgeBase.profile.title} ${knowledgeBase.profile.bio ?? ''}`,
+      ...knowledgeBase.projects.map((project) => `${project.name} ${project.description ?? ''} ${project.technologies.join(' ')}`),
+      ...knowledgeBase.experience.map((experience) => `${experience.title} ${experience.company} ${experience.description ?? ''}`),
+      ...knowledgeBase.education.map((education) => `${education.school} ${education.degree} ${education.field} ${education.description ?? ''}`),
+      ...knowledgeBase.skills.map((skill) => `${skill.name} ${skill.category ?? ''}`),
+    ];
+    const hasRelevantFact = profileFacts.some((fact) => this.scoreText(fact, words) > 0);
+    if (!hasRelevantFact) {
+      return "I don't have that detail in my profile, so I don't want to guess. I can still help with a particular role, project, skill, or education detail.";
     }
-
-    // PROJECTS - Multiple variations
-    if (userContent.includes('project') || userContent.includes('built') || userContent.includes('created') || userContent.includes('build') || userContent.includes('repo') || userContent.includes('repository')) {
-      const projects = [
-        "I've built several projects, with my main focus being on AI systems and knowledge bases. I created a professional profile knowledge system with conversational AI capabilities - that's actually what we're talking through right now! I also maintain other projects on GitHub focused on full-stack development and AI integration. Each project is designed to solve real problems and explore new possibilities in AI.",
-        "My projects center around AI and full-stack development. The most recent one is this knowledge system we're using right now - it combines conversational AI with profile management. I also have various open-source projects on GitHub exploring different aspects of modern web development and AI integration.",
-        "I've worked on quite a few projects! My passion projects revolve around AI systems - building chatbots, knowledge bases, and intelligent applications. Beyond that, I maintain several full-stack projects on GitHub. I like creating tools that solve real problems and showcase innovative uses of technology.",
-        "Project-wise, I've been heavily invested in AI-driven systems. I built this conversational knowledge system you're interacting with now, which combines LLMs with structured data. I also have projects in full-stack web development and various AI experimentation work on GitHub."
-      ];
-      return pickRandom(projects);
-    }
-
-    // EXPERIENCE & WORK - Multiple variations
-    if (userContent.includes('experience') || userContent.includes('work') || userContent.includes('background') || userContent.includes('employment') || userContent.includes('job')) {
-      const experience = [
-        "My professional experience includes various roles as a full-stack developer and senior engineer, building scalable applications and AI systems. It spans backend development with Node.js and TypeScript, frontend work with React, and integrating AI systems into production applications. I've been focused on creating knowledge bases and conversational interfaces, which led me to this passion project.",
-        "My professional experience has covered several roles in full-stack development as a software engineer and developer working with AI systems. I've built scalable backends with Node.js and engaging frontends with React. More recently, I've specialized in AI integration and building intelligent knowledge systems through increasingly complex projects.",
-        "My professional experience started in junior roles as a full-stack developer and evolved toward AI systems architecture. It includes backend development with modern frameworks like Node.js and Fastify, frontend development with React, and AI and LLM integration. Each role has built on the previous one, leading to my current focus on knowledge systems.",
-        "In my professional experience across software engineering roles, I've worked across the entire stack - from database design and backend APIs to interactive frontends. More recently, my focus has shifted toward AI systems and effectively integrating LLMs into applications. I love making AI systems practical and user-friendly."
-      ];
-      return pickRandom(experience);
-    }
-
-    // SKILLS & TECHNOLOGY - Multiple variations  
-    if (userContent.includes('skill') || userContent.includes('technology') || userContent.includes('language') || userContent.includes('expertise') || userContent.includes('technical')) {
-      const skills = [
-        "I work primarily with TypeScript and JavaScript across the full stack. On the frontend, I'm comfortable with React and modern UI frameworks. For backend, I build APIs with Node.js and Fastify. I'm also experienced with Python and have been diving deep into AI systems lately. I'm comfortable with databases, cloud infrastructure, and everything in between.",
-        "My technical stack includes TypeScript, JavaScript, React, Node.js, and Fastify. I'm proficient in Python, especially for AI and scripting work. I work with modern databases and understand cloud architecture. My recent focus has been on AI tooling and LLM integration, so I'm actively learning and experimenting with that space.",
-        "I'm most comfortable with TypeScript and JavaScript - it's what I use for most of my full-stack work. React on the frontend, Node.js on the backend - that's my bread and butter. I also work with Python, particularly for AI projects. I have hands-on experience with databases, APIs, and cloud deployment. And of course, I'm deep into AI and LLM work now.",
-        "Technically, I'm strongest in JavaScript/TypeScript, React, and Node.js. I build API backends with Fastify and modern web frontends with React. I'm comfortable with Python for AI and data work. I understand databases, DevOps basics, and cloud infrastructure. My current learning focus is AI systems, prompt engineering, and LLM integration patterns."
-      ];
-      return pickRandom(skills);
-    }
-
-    // AI & PASSION - Multiple variations
-    if (userContent.includes('ai') || userContent.includes('artificial intelligence') || userContent.includes('passion') || userContent.includes('love') || userContent.includes('excited')) {
-      const aiPassion = [
-        "I'm genuinely passionate about AI. I think we're at an exciting time where AI can augment human capabilities in meaningful ways. I'm interested in building systems that are grounded, reliable, and actually helpful - not just impressive. I'm exploring how to create AI that understands context, learns from interactions, and provides real value. Building this knowledge system has been a great way to explore these ideas practically.",
-        "AI is what excites me most about tech right now, and I'm passionate about building systems that are actually useful and grounded in real knowledge - not systems that hallucinate or make things up. I want to explore how LLMs can be practical tools for knowledge work, and this project is my playground for those ideas.",
-        "I'm passionate about building intelligent systems that are practical and grounded. The challenge of making AI systems reliable and useful is what drives my current work. I believe AI should augment human capabilities, not replace human judgment. That's why I focus on systems like this knowledge base - combining AI with structured, verified information.",
-        "AI and machine learning represent the most interesting frontier in software right now. I'm passionate about exploring how to build systems that leverage AI intelligently - whether that's conversational interfaces, knowledge systems, or decision support tools. The key for me is building systems that are trustworthy and provide real value."
-      ];
-      return pickRandom(aiPassion);
-    }
-
-    // GENERAL ABOUT YOURSELF - Check after specific topics (lower priority, more generic)
-    if (userContent.includes('yourself') || userContent.includes('about you') || (userContent.includes('tell me') && !userContent.includes('about'))) {
-      return "I'm Kuruvilla, a full-stack developer and AI systems architect with a passion for building scalable, intelligent solutions. I specialize in creating knowledge systems, AI integration, and working across the entire tech stack from backend services to interactive frontends. I'm really excited about the potential of AI to transform how we work and create solutions.";
-    }
-
-    // Default digital twin response for unknown topics
-    if (userMessageCount >= 2) {
-      return "My knowledge base is focused on my professional profile. I was created to answer questions about my professional career, including my work experience, skills, education, contributions, and projects.";
-    }
-
-    return "My knowledge base is focused on my professional profile. I can answer questions about my work experience, skills, education, contributions, and projects.";
+    return "I can help with that. Could you narrow it down to a project, role, skill, or education detail so I can give you the exact information from my profile?";
   }
 
-  private generateAssistantResponse(userContent: string, systemPrompt: string): string {
-    // Fallback assistant mode responses
-    if (
-      userContent.includes('hello') ||
-      userContent.includes('hi') ||
-      userContent.includes('hey') ||
-      userContent.includes('good')
-    ) {
-      return "Hello! I'm here to help you learn about this professional profile. Feel free to ask me questions!";
-    } else if (
-      userContent.includes('experience') ||
-      userContent.includes('work') ||
-      userContent.includes('company')
-    ) {
-      return "The profile includes experience with full-stack development, backend systems, and AI integration. Feel free to ask more specific questions!";
-    } else if (
-      userContent.includes('skill') ||
-      userContent.includes('technology') ||
-      userContent.includes('language')
-    ) {
-      return "Technical skills include TypeScript, React, Node.js, Python, and various modern frameworks and tools for building scalable systems.";
-    } else if (
-      userContent.includes('project') ||
-      userContent.includes('built') ||
-      userContent.includes('created')
-    ) {
-      return "The profile showcases projects in AI systems, knowledge bases, chatbots, and full-stack applications.";
-    } else if (
-      userContent.includes('github') ||
-      userContent.includes('repository') ||
-      userContent.includes('repo')
-    ) {
-      return "GitHub profile is available for viewing public repositories and contribution history.";
-    } else if (
-      userContent.includes('education') ||
-      userContent.includes('degree') ||
-      userContent.includes('school')
-    ) {
-      return "Educational background information is available in the profile.";
-    } else {
-      return "I'd be happy to help! Feel free to ask about experience, skills, projects, education, or anything else you'd like to know about this professional profile.";
+  private extractKnowledgeBase(systemPrompt: string): KnowledgeBase | null {
+    const match = /KNOWLEDGE_BASE_JSON_START\s*([\s\S]*?)\s*KNOWLEDGE_BASE_JSON_END/.exec(systemPrompt);
+    if (!match?.[1]) return null;
+    try {
+      const serializedKnowledge = JSON.parse(match[1], (key, value: unknown) =>
+        /(At|Date)$/.test(key) && typeof value === 'string' ? new Date(value) : value,
+      );
+      return KnowledgeBaseSchema.parse(serializedKnowledge);
+    } catch {
+      return null;
     }
+  }
+
+  private getSearchWords(text: string): Set<string> {
+    const aliases: Record<string, string[]> = {
+      workplace: ['current', 'work', 'experience'],
+      employer: ['company', 'experience'],
+      "employer's": ['company', 'experience'],
+      technologies: ['technology', 'skill'],
+      stack: ['technology', 'skill'],
+      framework: ['technology', 'skill'],
+      built: ['project'],
+      created: ['project'],
+      made: ['project'],
+      repo: ['project'],
+      repositories: ['project'],
+      career: ['experience'],
+      job: ['experience'],
+      role: ['experience'],
+      studied: ['education'],
+      degree: ['education'],
+      university: ['education'],
+    };
+    const words = new Set(text.toLowerCase().match(/[a-z0-9+#.]+/g) ?? []);
+    for (const word of [...words]) {
+      for (const alias of aliases[word] ?? []) words.add(alias);
+    }
+    return words;
+  }
+
+  private scoreText(text: string, words: Set<string>): number {
+    const textWords = new Set(text.toLowerCase().match(/[a-z0-9+#.]+/g) ?? []);
+    let score = 0;
+    for (const word of words) {
+      if (word.length > 2 && [...textWords].some((textWord) =>
+        textWord === word || (word.length >= 5 && textWord.includes(word)),
+      )) score += word.length > 5 ? 2 : 1;
+    }
+    return score;
+  }
+
+  private rankItems<T>(items: T[], words: Set<string>, getText: (item: T) => string): T[] {
+    return items
+      .map((item, index) => ({ item, index, score: this.scoreText(getText(item), words) }))
+      .filter((match) => match.score > 0)
+      .sort((left, right) => right.score - left.score || left.index - right.index)
+      .map((match) => match.item);
+  }
+
+  private generateAssistantResponse(userContent: string): string {
+    if (/\b(hello|hi|hey)\b/.test(userContent)) {
+      return "Hello. I can help with questions about the professional profile.";
+    }
+    return "I don't have enough profile context to answer that reliably.";
   }
 
   isConfigured(): boolean {

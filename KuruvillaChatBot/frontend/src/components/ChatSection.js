@@ -23,7 +23,7 @@ export function ChatSection({ serverStatus }) {
             {
                 id: 'greeting',
                 role: 'assistant',
-                content: 'Hey there! 👋 I\'m Kuruvilla. Thanks for stopping by. I\'m a Software Engineer and AI Systems Architect who\'s really passionate about building intelligent systems and exploring what\'s possible with AI. I love working on full-stack projects, knowledge systems, and creating tools that actually solve problems. Feel free to ask me anything - about my work, projects I\'ve built, technologies I use, or just chat about tech and ideas. What brings you here?',
+                content: 'Hi, I\'m Kuruvilla. Ask me about my work experience, projects, skills, education, or professional background. What would you like to know?',
                 timestamp: new Date(),
             },
         ]);

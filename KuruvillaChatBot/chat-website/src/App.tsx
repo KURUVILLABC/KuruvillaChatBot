@@ -22,7 +22,7 @@ export default function App() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hey there! 👋 I'm Kuruvilla. Thanks for stopping by. I'm a Software Engineer and AI Systems Architect who's really passionate about building intelligent systems. Feel free to ask me anything about my work, projects, skills, education, or experience. What brings you here?",
+      content: "Hi, I'm Kuruvilla. Ask me about my work experience, projects, skills, education, or professional background. What would you like to know?",
       timestamp: new Date(),
     },
   ]);
